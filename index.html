@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Learning Games</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --accent: #8b5cf6;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: var(--muted);
+            font-size: 1.1rem;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .game-card {
+            background: var(--panel);
+            border-radius: 16px;
+            padding: 25px;
+            text-decoration: none;
+            color: var(--text);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(139, 92, 246, 0.2);
+        }
+
+        .game-card .icon {
+            font-size: 2.5rem;
+        }
+
+        .game-card h2 {
+            font-size: 1.3rem;
+            color: var(--text);
+        }
+
+        .game-card p {
+            color: var(--muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .game-card .tag {
+            display: inline-block;
+            background: rgba(139, 92, 246, 0.2);
+            color: #c4b5fd;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: fit-content;
+            margin-top: auto;
+        }
+
+        footer {
+            margin-top: 60px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Interactive Learning Games</h1>
+        <p>Engaging activities for the classroom</p>
+    </header>
+
+    <div class="games-grid">
+        
+        <!-- GAME CARD: Four Corners Chemistry -->
+        <a href="games/chemical-or-physical.html" class="game-card">
+            <div class="icon">🧪</div>
+            <h2>Four Corners: Chemical or Physical?</h2>
+            <p>Observe everyday situations and decide whether a chemical reaction or physical change has occurred.</p>
+            <span class="tag">Chemistry</span>
+        </a>
+
+        <!-- Add more game cards here as you create them:
+        <a href="games/your-game-file.html" class="game-card">
+            <div class="icon">🎮</div>
+            <h2>Your Game Title</h2>
+            <p>Short description of the game.</p>
+            <span class="tag">Subject</span>
+        </a>
+        -->
+
+    </div>
+
+    <footer>
+        &copy; 2024 Interactive Learning Games
+    </footer>
+
+</body>
+</html>
