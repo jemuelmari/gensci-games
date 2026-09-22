@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Four Corners: Chemical or Physical?</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-color: #1e293b;
+            --text-color: #f8fafc;
+            --corner-a: #3b82f6; /* Blue - Chemical */
+            --corner-b: #22c55e; /* Green - Physical */
+            --corner-c: #eab308; /* Yellow - Both/Unsure */
+            --corner-d: #ef4444; /* Red - Need More Evidence */
+            --accent: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* --- HUD --- */
+        #hud {
+            width: 95%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+        }
+
+        .stat-box {
+            background: var(--panel-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border-bottom: 2px solid var(--accent);
+            color: var(--text-color);
+        }
+
+        /* --- Game Board --- */
+        #game-container {
+            position: relative;
+            width: 95%;
+            max-width: 900px;
+            height: 75vh;
+            max-height: 700px;
+            background: var(--panel-color);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Situation Area */
+        #situation-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        #situation-number {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #64748b;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        #situation-text {
+            font-size: 1.8rem;
+            font-weight: 600;
+            line-height: 1.4;
+            max-width: 700px;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        #situation-text.fade-out {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        /* Feedback Panel */
+        #feedback {
+            margin-top: 20px;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            max-width: 700px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease;
+            pointer-events: none;
+        }
+
+        #feedback.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        #feedback.correct {
+            background: rgba(34, 197, 94, 0.2);
+            border: 2px solid #22c55e;
+            color: #86efac;
+        }
+
+        #feedback.incorrect {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            color: #fca5a5;
+        }
+
+        #feedback.unsure {
+            background: rgba(234, 179, 8, 0.2);
+            border: 2px solid #eab308;
+            color: #fde047;
+        }
+
+        /* Corner Buttons */
+        #corners {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .corner-btn {
+            padding: 20px 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.1s, filter 0.2s, opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-align: center;
+            line-height: 1.2;
+            min-height: 70px;
+        }
+
+        .corner-btn:hover:not(:disabled) {
+            transform: scale(1.02);
+            filter: brightness(1.15);
+        }
+
+        .corner-btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .corner-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .corner-btn .emoji {
+            font-size: 1.4rem;
+        }
+
+        #btn-a { background: var(--corner-a); }
+        #btn-b { background: var(--corner-b); }
+        #btn-c { background: var(--corner-c); color: #1a1a1a; }
+        #btn-d { background: var(--corner-d); }
+
+        /* --- Overlays --- */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 30px;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .overlay h1 {
+            font-size: 2.5rem;
+            margin: 0 0 10px 0;
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .overlay p {
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            color: #cbd5e1;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        button.action-btn {
+            padding: 15px 45px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+        }
+
+        button.action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.7);
+        }
+
+        /* Results Screen */
+        #results-screen h1 {
+            background: linear-gradient(135deg, #22c55e, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        #score-display {
+            font-size: 4rem;
+            font-weight: 900;
+            margin: 10px 0 20px 0;
+            color: #f8fafc;
+        }
+
+        #score-display span {
+            font-size: 1.5rem;
+            color: #64748b;
+        }
+
+        #processing-questions {
+            text-align: left;
+            background: rgba(139, 92, 246, 0.1);
+            border-left: 4px solid #8b5cf6;
+            padding: 20px 25px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            max-width: 600px;
+        }
+
+        #processing-questions h3 {
+            margin: 0 0 12px 0;
+            color: #c4b5fd;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #processing-questions ol {
+            margin: 0;
+            padding-left: 20px;
+            color: #cbd5e1;
+            line-height: 1.7;
+        }
+
+        #processing-questions li {
+            margin-bottom: 8px;
+        }
+
+        /* Animations */
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+            40%, 60% { transform: translate3d(8px, 0, 0); }
+        }
+
+        /* Progress Bar */
+        #progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            #situation-text { font-size: 1.3rem; }
+            .corner-btn { font-size: 0.85rem; min-height: 60px; padding: 15px 10px; }
+            .corner-btn .emoji { font-size: 1.1rem; }
+            #hud { font-size: 0.8rem; }
+            .stat-box { padding: 6px 10px; }
+            .overlay h1 { font-size: 1.8rem; }
+            #score-display { font-size: 3rem; }
+            #processing-questions { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="stat-box">Situation: <span id="current-q">0</span>/10</div>
+        <div class="stat-box">Score: <span id="score">0</span></div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container">
+        <div id="progress-bar"><div id="progress-fill"></div></div>
+
+        <!-- Situation Display -->
+        <div id="situation-area">
+            <div id="situation-number">Situation 1</div>
+            <div id="situation-text">Loading...</div>
+            <div id="feedback"></div>
+        </div>
+
+        <!-- Corner Buttons -->
+        <div id="corners">
+            <button class="corner-btn" id="btn-a" data-answer="chemical">
+                <span class="emoji">🟦</span> Chemical Reaction
+            </button>
+            <button class="corner-btn" id="btn-b" data-answer="physical">
+                <span class="emoji">🟩</span> Physical Change
+            </button>
+            <button class="corner-btn" id="btn-c" data-answer="both">
+                <span class="emoji">🟨</span> Both / Unsure
+            </button>
+            <button class="corner-btn" id="btn-d" data-answer="evidence">
+                <span class="emoji">🟥</span> I Need More Evidence
+            </button>
+        </div>
+
+        <!-- Start Screen -->
+        <div class="overlay active" id="start-screen">
+            <h1>Four Corners</h1>
+            <p><strong>"What do you think?"</strong><br><br>
+            Observe each everyday situation and decide: Is it a <strong>Chemical Reaction</strong>, a <strong>Physical Change</strong>, <strong>Both/Unsure</strong>, or do you <strong>Need More Evidence</strong>?</p>
+            <p style="font-size:0.9rem; color:#94a3b8;">No penalties for wrong answers — this is to explore your thinking!</p>
+            <button class="action-btn" id="start-btn">Start Activity</button>
+        </div>
+
+        <!-- Results Screen -->
+        <div class="overlay" id="results-screen">
+            <h1>Activity Complete!</h1>
+            <div id="score-display"><span>Score:</span> 0/10</div>
+            
+            <div id="processing-questions">
+                <h3>💭 Processing Questions</h3>
+                <ol>
+                    <li>Which situations were the easiest for you to classify? Why?</li>
+                    <li>Which situation was the most difficult to decide? What made it challenging?</li>
+                    <li>What clues did you use to decide whether a change was a chemical reaction or a physical change?</li>
+                </ol>
+            </div>
+
+            <button class="action-btn" id="restart-btn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Activity Data ---
+        const situations = [
+            {
+                text: "An apple turns brown after being sliced.",
+                answer: "chemical",
+                explanation: "Chemical Reaction — A new substance (brown pigment) is formed through oxidation."
+            },
+            {
+                text: "Ice cubes melt inside a glass.",
+                answer: "physical",
+                explanation: "Physical Change — Only the state of matter changes (solid → liquid). No new substance is formed."
+            },
+            {
+                text: "A bicycle nail becomes rusty after being left outside.",
+                answer: "chemical",
+                explanation: "Chemical Reaction — Rust is a new substance (iron oxide) formed from iron, oxygen, and water."
+            },
+            {
+                text: "A candle burns while giving off light and heat.",
+                answer: "chemical",
+                explanation: "Chemical Reaction — Burning produces new substances (CO₂, water vapor) and releases energy."
+            },
+            {
+                text: "A sheet of paper is torn into smaller pieces.",
+                answer: "physical",
+                explanation: "Physical Change — The paper is still paper; only its size and shape changed."
+            },
+            {
+                text: "Cake batter becomes a baked cake inside the oven.",
+                answer: "chemical",
+                explanation: "Chemical Reaction — Heat causes irreversible changes forming new substances."
+            },
+            {
+                text: "Fresh milk is accidentally left on the kitchen counter overnight and develops a sour smell by morning.",
+                answer: "chemical",
+                explanation: "Chemical Reaction — Bacteria cause fermentation, producing new substances (acids) that cause the sour smell."
+            },
+            {
+                text: "The hood of a parked black car becomes extremely hot after staying under the sun for several hours.",
+                answer: "physical",
+                explanation: "Physical Change — The car absorbs heat but no new substance is formed. (A tricky one! Heat alone doesn't mean a chemical reaction.)"
+            },
+            {
+                text: "Vinegar is poured onto baking soda, producing vigorous bubbling and foam.",
+                answer: "chemical",
+                explanation: "Chemical Reaction — Gas production (CO₂ bubbles) is evidence of a chemical reaction."
+            },
+            {
+                text: "A silver spoon becomes shiny again after being polished with toothpaste and a soft cloth.",
+                answer: "both",
+                explanation: "Both / I Need More Evidence — Polishing can be physical (removing tarnish) or chemical (reacting with tarnish). More evidence is needed!"
+            }
+        ];
+
+        // --- Game State ---
+        let state = {
+            currentIndex: 0,
+            score: 0,
+            isPlaying: false,
+            answered: false
+        };
+
+        // --- DOM Elements ---
+        const DOM = {
+            situationNumber: document.getElementById('situation-number'),
+            situationText: document.getElementById('situation-text'),
+            feedback: document.getElementById('feedback'),
+            currentQ: document.getElementById('current-q'),
+            score: document.getElementById('score'),
+            progressFill: document.getElementById('progress-fill'),
+            buttons: document.querySelectorAll('.corner-btn'),
+            startScreen: document.getElementById('start-screen'),
+            resultsScreen: document.getElementById('results-screen'),
+            startBtn: document.getElementById('start-btn'),
+            restartBtn: document.getElementById('restart-btn'),
+            scoreDisplay: document.getElementById('score-display')
+        };
+
+        // --- Audio System (Synthesized) ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(1000, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'incorrect') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.25);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now); osc.stop(now + 0.25);
+            } else if (type === 'click') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now); osc.stop(now + 0.08);
+            } else if (type === 'finish') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.setValueAtTime(600, now + 0.15);
+                osc.frequency.setValueAtTime(800, now + 0.3);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+            }
+        }
+
+        // --- Core Logic ---
+
+        function startGame() {
+            initAudio();
+            state.currentIndex = 0;
+            state.score = 0;
+            state.isPlaying = true;
+            state.answered = false;
+            
+            DOM.score.textContent = '0';
+            DOM.currentQ.textContent = '0';
+            DOM.startScreen.classList.remove('active');
+            DOM.resultsScreen.classList.remove('active');
+            
+            loadSituation();
+        }
+
+        function loadSituation() {
+            if (state.currentIndex >= situations.length) {
+                endGame();
+                return;
+            }
+
+            state.answered = false;
+            const situation = situations[state.currentIndex];
+
+            // Reset UI
+            DOM.situationNumber.textContent = `Situation ${state.currentIndex + 1}`;
+            DOM.situationText.textContent = situation.text;
+            DOM.situationText.classList.remove('fade-out');
+            DOM.feedback.className = 'feedback';
+            DOM.feedback.textContent = '';
+            
+            // Enable buttons
+            DOM.buttons.forEach(btn => btn.disabled = false);
+            
+            // Update HUD
+            DOM.currentQ.textContent = state.currentIndex + 1;
+            DOM.progressFill.style.width = `${((state.currentIndex) / situations.length) * 100}%`;
+        }
+
+        function handleAnswer(selectedAnswer) {
+            if (state.answered || !state.isPlaying) return;
+            state.answered = true;
+
+            const situation = situations[state.currentIndex];
+            const isCorrect = selectedAnswer === situation.answer;
+
+            // Disable all buttons
+            DOM.buttons.forEach(btn => btn.disabled = true);
+
+            // Show Feedback
+            if (isCorrect) {
+                playSound('correct');
+                state.score++;
+                DOM.score.textContent = state.score;
+                DOM.feedback.className = 'feedback show correct';
+                DOM.feedback.innerHTML = `✅ <strong>Correct!</strong> ${situation.explanation}`;
+            } else if (selectedAnswer === 'both' && situation.answer === 'both') {
+                playSound('correct');
+                state.score++;
+                DOM.score.textContent = state.score;
+                DOM.feedback.className = 'feedback show correct';
+                DOM.feedback.innerHTML = `✅ <strong>Correct!</strong> ${situation.explanation}`;
+            } else {
+                playSound('incorrect');
+                document.body.classList.add('shake');
+                setTimeout(() => document.body.classList.remove('shake'), 400);
+                DOM.feedback.className = 'feedback show incorrect';
+                DOM.feedback.innerHTML = `❌ <strong>Not quite.</strong> The correct answer is <strong>${getAnswerLabel(situation.answer)}</strong>.<br>${situation.explanation}`;
+            }
+
+            // Show the correct answer on the button
+            DOM.buttons.forEach(btn => {
+                if (btn.dataset.answer === situation.answer) {
+                    btn.style.boxShadow = '0 0 0 3px #fff';
+                }
+            });
+
+            // Next question after delay
+            setTimeout(() => {
+                DOM.buttons.forEach(btn => btn.style.boxShadow = 'none');
+                state.currentIndex++;
+                loadSituation();
+            }, 3200);
+        }
+
+        function getAnswerLabel(answer) {
+            const labels = {
+                chemical: '🟦 Chemical Reaction',
+                physical: '🟩 Physical Change',
+                both: '🟨 Both / Unsure',
+                evidence: '🟥 I Need More Evidence'
+            };
+            return labels[answer] || answer;
+        }
+
+        function endGame() {
+            state.isPlaying = false;
+            playSound('finish');
+            DOM.progressFill.style.width = '100%';
+            DOM.scoreDisplay.innerHTML = `<span>Score:</span> ${state.score}/${situations.length}`;
+            DOM.resultsScreen.classList.add('active');
+        }
+
+        // --- Event Listeners ---
+        DOM.startBtn.addEventListener('click', startGame);
+        DOM.restartBtn.addEventListener('click', startGame);
+
+        DOM.buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                playSound('click');
+                handleAnswer(btn.dataset.answer);
+            });
+        });
+
+        // Keyboard shortcuts (A, B, C, D)
+        document.addEventListener('keydown', (e) => {
+            if (!state.isPlaying || state.answered) return;
+            const key = e.key.toLowerCase();
+            const map = { 'a': 'chemical', 'b': 'physical', 'c': 'both', 'd': 'evidence' };
+            if (map[key]) {
+                playSound('click');
+                handleAnswer(map[key]);
+            }
+        });
+
+    </script>
+</body>
+</html>
